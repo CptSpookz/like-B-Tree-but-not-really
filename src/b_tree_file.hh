@@ -52,6 +52,9 @@ class BTreeNode
 public:
     BTreeNode(int _t, bool _leaf);  // Constructor
 
+    // A function to check if BTree is empty
+    bool is_empty();
+
     // A function to traverse all nodes in a subtree rooted with this node
     void traverse();
 
@@ -71,6 +74,9 @@ public:
     // A function to get the successor of the key- where the key
     // is present in the idx-th position in the node
     int getSucc(int idx);
+
+    // Access to private attributes
+    friend class BTree;
 };
 
 // A file BTree
@@ -79,6 +85,7 @@ class BTree
     int root;               // Root file position
     int t;                  // Maximum degree
     BTreeNode* node;        // Current loaded node
+    int node_ptr;           // Current node pointer
     std::string fpath;      // File path
     std::fstream file;      // File stream (input/output, binary)
 
@@ -94,6 +101,21 @@ public:
 
     // A function to initialize Btree and file
     void init(int _t);
+
+    // A function to load a node from secondary memory to the primary memory,
+    // using a pointer
+    void load_node(int ptr);
+
+    // A function to store a node from primary memory to secondary memory,
+    // using a pointer
+    void store_node(int ptr, BTreeNode node);
+
+    // A function to add a new node to secondary memory
+    // Returns file pointer
+    int add_node(BTreeNode node);
+
+    // A function to insert key k
+    void insert(int key);
 
     // A function to get the next node, using the predecessor pointer on index
     void getPred(int idx);
@@ -114,6 +136,10 @@ BTreeNode::BTreeNode(int _t, bool _leaf){
 }
 
 // BTreeNode definitions
+bool BTreeNode::is_empty(){
+    return (this->n == 0);
+}
+
 void BTreeNode::traverse(){}
 
 BTreeNode* BTreeNode::search(int k){}
@@ -220,6 +246,97 @@ void BTree::init(int _t){
     }
 }
 
+void BTree::load_node(int ptr){
+    if(this->file.is_open()){
+        // Checks size of file
+        this->file.seekg(0, this->file.end);
+        int size = this->file.tellg();
+
+        // Check if pointer is valid on file
+        if((size-sizeof(int)*2)/512 <= ptr){
+            this->node_ptr = ptr;
+            char data[512];
+
+            this->file.seekg(sizeof(int)*2+ptr*512, this->file.beg);
+            this->file.read(data, 512);            
+
+            this->node->deserialize(data);
+        }
+    }
+}
+
+void BTree::store_node(int ptr, BTreeNode node){
+    if(this->file.is_open()){
+        // Checks size of file
+        this->file.seekg(0, this->file.end);
+        int size = this->file.tellg();
+        std::cout << ptr << std::endl;
+        // Check if pointer is valid on file
+        if(((size-sizeof(int)*2)/512)-1 >= ptr){
+            char* data = node.serialize();
+
+            if(DEBUG == true)
+                std::cout << "Storing node" << std::endl;
+
+            this->file.seekg(sizeof(int)*2+ptr*512, this->file.beg);
+            this->file.write(data, 512);
+        }
+    }
+}
+
+int BTree::add_node(BTreeNode node){
+    if(this->file.is_open()){
+        char *data = node.serialize();
+
+        this->file.seekp(0, this->file.end);
+        this->file.write(data, 512);
+        
+        return ((this->file.tellp()-(sizeof(int)*2))/512);
+    }
+    return -1;
+}
+
+void BTree::insert(int key){
+    if(this->file.is_open()){
+        // Load root from BTree
+        this->load_node(this->root);
+        // If root node is empty
+        if(this->node->is_empty()){
+            this->node->keys[0] = key;  // Sets node keys
+            this->node->n = 1;          // Updates node key count
+            this->store_node(this->root, *this->node);
+
+            if(DEBUG == true)
+                std::cout << "Inserted on empty node" << std::endl;
+        }else{
+            // If root is full, then tree grows in height
+            if(this->node->n == this->t){
+                // Create new node
+                BTreeNode s(this->t, false);
+
+                // Make old root as child of new root
+                s.C[0] = this->node_ptr;
+
+                // Split the old root and move 1 key to the new root
+                // TODO: splitChild()
+                
+                // New root has two children now. Decide which of the
+                // two children is going to have new key
+                /* int i = 0;
+                if(s->keys[0] < key)
+                    i++;
+                s.C[i].insertNonFull(key) */ 
+
+                // Add new node to secondary memory
+                int ptr = this->add_node(s);
+
+                // Change root
+                this->root = ptr;
+            }
+        }
+    }
+}
+
 void BTree::getPred(int idx){
     if(this->file.is_open()){
         int ptr = this->node->getPred(idx);
@@ -237,5 +354,5 @@ void BTree::getSucc(int idx){
 }
 
 void BTree::search(int key){
-
+    
 }
