@@ -8,7 +8,11 @@ int main(){
 
     btree.load_info_header();
 
-    btree.insert(4000);
+    btree.insert(32);
+
+    btree.insert(16);
+
+    btree.insert(48);
 
     return 0;
 }

@@ -117,6 +117,9 @@ public:
     // A function to insert key k
     void insert(int key);
 
+    // A function to insert key k in a non-full node
+    void insertNonFull(int key);
+
     // A function to get the next node, using the predecessor pointer on index
     void getPred(int idx);
 
@@ -332,9 +335,63 @@ void BTree::insert(int key){
 
                 // Change root
                 this->root = ptr;
+            }else{
+                this->insertNonFull(key);
             }
         }
     }
+}
+
+void BTree::insertNonFull(int key){
+    // Initialize index as index of rightmost element
+    int i = this->node->n-1;
+
+    // If this is a leaf node
+    if (this->node->leaf == true)
+    {
+        // The following loop does two things
+        // a) Finds the location of new key to be inserted
+        // b) Moves all greater keys to one place ahead
+        while (i >= 0 && this->node->keys[i] > key)
+        {
+            this->node->keys[i+1] = this->node->keys[i];
+            i--;
+        }
+        
+        // Insert the new key at found location
+        this->node->keys[i+1] = key;
+        this->node->n = this->node->n+1;
+
+        this->store_node(this->node_ptr, *this->node);
+    }
+    else // If this node is not leaf
+    {
+        BTreeNode node_aux = *this->node;
+        int node_ptr_aux = this->node_ptr;
+
+        // Find the child which is going to have the new key
+        while (i >= 0 && this->node->keys[i] > key)
+            i--;
+        
+        this->load_node(this->node->C[i+1]); 
+
+        // See if the found child is full
+        if (this->node->n == 2*t-1)
+        {
+            // If the child is full, then split it
+            //splitChild(i+1, C[i+1]);
+
+            // After split, the middle key of C[i] goes up and
+            // C[i] is splitted into two.  See which of the two
+            // is going to have the new key
+            //if (keys[i+1] < k)
+            //    i++;
+        }
+        
+        this->store_node(node_ptr_aux, node_aux);
+        this->insertNonFull(key);
+    }
+
 }
 
 void BTree::getPred(int idx){
