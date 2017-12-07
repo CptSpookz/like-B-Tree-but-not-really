@@ -44,4 +44,4 @@ Exemplo: a busca deve ler o nó raiz do disco, decidir por qual nó filho seguir
 
 Tomamos como fonte a versão final do código de Árvore B do site [Geeks for Geeks](http://www.geeksforgeeks.org/b-tree-set-3delete/), que implementa as funções básicas de inserção, remoção e busca, além de funções utilitárias para traçar o caminho do grafo.
 
-Nosso código manipulará a Árvore B de forma que cada nó fique em um arquivo diferente, buscando maximizar o número de chaves para uma situação real de armazenamento em bancos de dados, por exemplo,com cada arquivo ocupando idealmente o espaço de um bloco do sistema (representado no código pela constante `BLK_SIZE`).
+Nosso código manipulará a Árvore B de forma que ela fique em um único arquivo, e as operações de inserção e busca atuarão todas em memória secundária, tendo no máximo um nó carregado em memória primária de cada vez.
