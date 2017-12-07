@@ -51,7 +51,7 @@ class BTreeNode
 
 public:
     BTreeNode(int _t, bool _leaf);  // Constructor
-
+    
     // A function to check if BTree is empty
     bool is_empty();
 
@@ -66,14 +66,6 @@ public:
 
     // A function to deserialize node data
     void deserialize(char* data);
-
-    // A function to get the predecessor of the key- where the key
-    // is present in the idx-th position in the node
-    int getPred(int idx);
-
-    // A function to get the successor of the key- where the key
-    // is present in the idx-th position in the node
-    int getSucc(int idx);
 
     // Access to private attributes
     friend class BTree;
@@ -117,14 +109,8 @@ public:
     // A function to insert key k
     void insert(int key);
 
-    // A function to get the next node, using the predecessor pointer on index
-    void getPred(int idx);
-
-    // A function to get the next node, using the successor pointer on index
-    void getSucc(int idx);
-
     // A function to search key on tree
-    void search(int key);
+    BTreeNode* search(int key);
 };
 
 BTreeNode::BTreeNode(int _t, bool _leaf){
@@ -142,7 +128,18 @@ bool BTreeNode::is_empty(){
 
 void BTreeNode::traverse(){}
 
-BTreeNode* BTreeNode::search(int k){}
+BTreeNode* BTreeNode::search(int k){
+    // Find the first key greater than or equal to k
+    int i = 0;
+    while (i < this->n && k > this->keys[i]) i++;
+
+    // If the key found is is equal to k, return this node
+    if (keys[i] == k)
+        return this;
+
+    // If it isn't, return a null pointer
+    return nullptr;
+}
 
 char* BTreeNode::serialize(){
     char* data = new char[512];
@@ -179,11 +176,6 @@ void BTreeNode::deserialize(char* data){
     memcpy(&this->leaf, &data[data_idx], sizeof(bool));
 }
 
-int BTreeNode::getPred(int idx){}
-
-int BTreeNode::getSucc(int idx){}
-
-
 // BTree definitions
 BTree::BTree(std::string _fpath){
     this->fpath = _fpath;
@@ -209,7 +201,7 @@ void BTree::load_info_header(){
             std::cout << "Minimum degree: " << this->t << std::endl;
         }
     
-        delete buffer;
+        delete[] buffer;
     }
 }
 
@@ -225,7 +217,7 @@ void BTree::store_info_header(int _root, int _t){
         this->file.seekp(0, this->file.beg);
         this->file.write(buffer, sizeof(int)*2);
 
-        delete buffer;
+        delete[] buffer;
     }
 }
 
@@ -253,7 +245,7 @@ void BTree::load_node(int ptr){
         int size = this->file.tellg();
 
         // Check if pointer is valid on file
-        if((size-sizeof(int)*2)/512 <= ptr){
+        if((size-sizeof(int)*2)/512 <= (unsigned int)ptr){
             this->node_ptr = ptr;
             char data[512];
 
@@ -272,7 +264,7 @@ void BTree::store_node(int ptr, BTreeNode node){
         int size = this->file.tellg();
         std::cout << ptr << std::endl;
         // Check if pointer is valid on file
-        if(((size-sizeof(int)*2)/512)-1 >= ptr){
+        if((((size-sizeof(int)*2)/512)-1 >= (unsigned int)ptr)){
             char* data = node.serialize();
 
             if(DEBUG == true)
@@ -291,7 +283,7 @@ int BTree::add_node(BTreeNode node){
         this->file.seekp(0, this->file.end);
         this->file.write(data, 512);
         
-        return ((this->file.tellp()-(sizeof(int)*2))/512);
+        return (((unsigned long int)this->file.tellp() - (sizeof(int)*2))/512);
     }
     return -1;
 }
@@ -337,22 +329,33 @@ void BTree::insert(int key){
     }
 }
 
-void BTree::getPred(int idx){
+BTreeNode* BTree::search(int key){
     if(this->file.is_open()){
-        int ptr = this->node->getPred(idx);
-        if(DEBUG == true)
-            std::cout << "Getting node on relative location: " << ptr << std::endl;
-    }
-}
+	// If a node is already is loaded, save it so it's not lost
+	BTreeNode* result = nullptr;
+	// Load the root and check if it is empty
+	this->load_node(this->root);
+	// If the root is not empty, begin search
+	if(!this->node->is_empty()){
+            result = this->node->search(key);
+	    // If the result is a null pointer, load a new node until a leaf is reached
+            while (!this->node->leaf && result == nullptr){
+	        int i = 0;
+		while (i < this->node->n && key > this->node->keys[i]) i++;
+		    // Load the appropriate child node 
+		    this->load_node(this->node->C[i]);
 
-void BTree::getSucc(int idx){
-    if(this->file.is_open()){
-        int ptr = this->node->getSucc(idx);
-        if(DEBUG == true)
-            std::cout << "Getting node on relative location: " << ptr << std::endl;
+		    // Try searching again
+		    result = this->node->search(key);
+	    }
+	}
+	if(DEBUG ){
+		if (result != nullptr)
+			std::cout << "Found key " << std::endl;
+		else
+			std::cout << "Key was not found" << std::endl;
+	}
+	return result;
     }
-}
-
-void BTree::search(int key){
-    
+    return nullptr;
 }

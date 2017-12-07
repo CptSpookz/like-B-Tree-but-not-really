@@ -29,7 +29,10 @@
  
   Reference: CLRS3 - Chapter 18 - (499-502)
   It is advised to read the material in CLRS before taking a look at the code. */
- 
+
+#include <iostream>
+using namespace std;
+
 // A BTree node
 class BTreeNode
 {
