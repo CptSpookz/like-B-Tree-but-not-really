@@ -4,7 +4,7 @@ int main(){
     // BTree file test
     BTree btree = BTree("btree");
 
-    btree.init(63);
+    btree.init(3);
 
     btree.load_info_header();
 
@@ -13,6 +13,18 @@ int main(){
     btree.insert(16);
 
     btree.insert(48);
+
+    btree.insert(128);
+
+    btree.insert(8);
+
+    btree.insert(80);
+
+    btree.insert(96);
+    
+    btree.insert(64);
+
+    btree.insert(112);
 
     return 0;
 }
