@@ -492,9 +492,9 @@ BTreeNode* BTree::search(int key){
 	}
 	if(DEBUG ){
 		if (result != nullptr)
-			std::cout << "Found key " << std::endl;
+			std::cout << "Found key " << key << std::endl;
 		else
-			std::cout << "Key was not found" << std::endl;
+			std::cout << "Key " << key << " was not found" << std::endl;
 	}
 	return result;
     }

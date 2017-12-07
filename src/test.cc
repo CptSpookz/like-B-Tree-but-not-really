@@ -8,11 +8,6 @@ int main(){
 
     btree.load_info_header();
 
-<<<<<<< HEAD
-    btree.insert(4000);
-    btree.insert(4040);
-    btree.insert(3902);
-=======
     btree.insert(32);
 
     btree.insert(16);
@@ -30,7 +25,8 @@ int main(){
     btree.insert(64);
 
     btree.insert(112);
->>>>>>> f2929a0c842f8bbb5861f385d94bbc90b19b6231
+
+    btree.search(112);
 
     btree.search(4000);
     btree.search(3902);
